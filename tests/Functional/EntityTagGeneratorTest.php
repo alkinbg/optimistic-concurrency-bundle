@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OptimisticConcurrency\Bundle\Tests\Functional;
 
-use Doctrine\DBAL\Platforms\SQLitePlatform;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use OptimisticConcurrency\Bundle\Context\EntityTagContext;
@@ -105,10 +105,19 @@ final class EntityTagGeneratorTest extends FunctionalTestCase
         );
     }
 
+    /**
+     * @throws Exception
+     */
     public function testBinaryStringIdentifierBytesProduceAValidStrongTag(): void
     {
-        if (!$this->entityManager->getConnection()->getDatabasePlatform() instanceof SQLitePlatform) {
-            $this->markTestSkipped('The invalid-UTF8 text fixture is SQLite-specific; cross-database jobs cover the portable concurrency path.');
+        $platformClass = $this->entityManager
+    ->getConnection()
+    ->getDatabasePlatform()::class;
+
+        if (!str_ends_with(strtolower($platformClass), '\\sqliteplatform')) {
+            $this->markTestSkipped(
+                'The invalid-UTF8 text fixture is SQLite-specific; cross-database jobs cover the portable concurrency path.',
+            );
         }
 
         $document = new BinaryIdentifierDocument("binary-\xFF-identifier");
