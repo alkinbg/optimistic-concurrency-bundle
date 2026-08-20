@@ -43,10 +43,10 @@ final class EntityTagGeneratorTest extends FunctionalTestCase
         self::assertSame($before, $this->generate($generator, $reloaded));
     }
 
-	/**
-	 * @throws ORMException
-	 */
-	public function testTagIsStableForDoctrineLazyReferenceOfSameDatabaseState(): void
+    /**
+     * @throws ORMException
+     */
+    public function testTagIsStableForDoctrineLazyReferenceOfSameDatabaseState(): void
     {
         $document = $this->createDocument();
         $generator = $this->generator();
