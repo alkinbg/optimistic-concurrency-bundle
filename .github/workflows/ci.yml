@@ -20,7 +20,8 @@ env:
 jobs:
   code-style:
     name: Code style
-    # Never execute untrusted fork code on the maintainer's self-hosted runner.
+    # Trusted repository refs get the full CI suite.
+    # Fork pull requests use the isolated fork-pr job below.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -31,60 +32,63 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
       - name: Verify PHP and Composer
         run: |
-          php82 -v
-          php82 "$(command -v composer)" --version
+          php -v
+          composer --version
 
       - name: Validate Composer configuration
-        run: php82 "$(command -v composer)" validate --strict
+        run: composer validate --strict
 
       - name: Install dependencies
-        run: php82 "$(command -v composer)" update --prefer-dist --no-progress
+        run: composer update --prefer-dist --no-progress
 
       - name: Audit dependencies
-        run: php82 "$(command -v composer)" audit --locked
+        run: composer audit --locked
 
       - name: Check code style
-        run: php82 vendor/bin/php-cs-fixer check --diff --config=.php-cs-fixer.dist.php
+        run: vendor/bin/php-cs-fixer check --diff --config=.php-cs-fixer.dist.php
 
   quality:
     name: PHP ${{ matrix.php }} / ${{ matrix.dependencies }}
-    # Never execute untrusted fork code on the maintainer's self-hosted runner.
+    # Trusted repository refs get the complete supported PHP/dependency matrix.
+    # Fork pull requests use the isolated fork-pr job below.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
       matrix:
         include:
           - php: '8.2'
-            php_binary: php82
             dependencies: lowest
-            composer_options: '--prefer-lowest'
+            composer_options: '--prefer-lowest --prefer-stable'
             audit: false
 
           - php: '8.2'
-            php_binary: php82
             dependencies: latest
             composer_options: ''
             audit: true
 
           - php: '8.3'
-            php_binary: php83
             dependencies: latest
             composer_options: ''
             audit: true
 
           - php: '8.4'
-            php_binary: php84
             dependencies: latest
             composer_options: ''
             audit: true
 
           - php: '8.5'
-            php_binary: php85
             dependencies: latest
             composer_options: ''
             audit: true
@@ -95,33 +99,42 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite
+          coverage: none
+          tools: composer:v2
+
       - name: Verify PHP and Composer
         run: |
-          ${{ matrix.php_binary }} -v
-          ${{ matrix.php_binary }} "$(command -v composer)" --version
+          php -v
+          composer --version
 
       - name: Validate Composer configuration
-        run: ${{ matrix.php_binary }} "$(command -v composer)" validate --strict
+        run: composer validate --strict
 
       - name: Install dependencies
-        run: ${{ matrix.php_binary }} "$(command -v composer)" update --prefer-dist --no-progress ${{ matrix.composer_options }}
+        run: composer update --prefer-dist --no-progress ${{ matrix.composer_options }}
 
       - name: Audit dependencies
         if: matrix.audit
-        run: ${{ matrix.php_binary }} "$(command -v composer)" audit --locked
+        run: composer audit --locked
 
       - name: Check platform requirements
-        run: ${{ matrix.php_binary }} "$(command -v composer)" check-platform-reqs
+        run: composer check-platform-reqs
 
       - name: Run tests
-        run: ${{ matrix.php_binary }} vendor/bin/phpunit
+        run: vendor/bin/phpunit
 
       - name: Run static analysis
-        run: ${{ matrix.php_binary }} vendor/bin/phpstan analyse --memory-limit=512M
+        run: vendor/bin/phpstan analyse --memory-limit=512M
 
   fork-pr:
     name: Fork PR / PHP 8.4
-    # Untrusted contributions run only on an isolated GitHub-hosted runner.
+    # Untrusted fork contributions execute only on an isolated GitHub-hosted runner
+    # and do not receive repository secrets or write permissions.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -136,7 +149,14 @@ jobs:
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
         with:
           php-version: '8.4'
+          extensions: pdo_sqlite
           coverage: none
+          tools: composer:v2
+
+      - name: Verify PHP and Composer
+        run: |
+          php -v
+          composer --version
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-progress
@@ -146,9 +166,9 @@ jobs:
 
   postgresql:
     name: PostgreSQL / PHP 8.4
-    # Keep the private repository free of hosted-runner spend; this becomes a
-    # release portability gate automatically once the project is public.
-    if: github.event.repository.private == false && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    # Run the database portability gate for pushes and trusted pull requests.
+    # Fork pull requests remain isolated from service-backed release checks.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -179,6 +199,12 @@ jobs:
           php-version: '8.4'
           extensions: pdo_pgsql
           coverage: none
+          tools: composer:v2
+
+      - name: Verify PHP and Composer
+        run: |
+          php -v
+          composer --version
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-progress
