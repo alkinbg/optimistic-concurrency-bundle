@@ -1,0 +1,15 @@
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+
+parameters:
+    level: max
+
+    paths:
+        - config/services.php
+        - src
+        - tests
+
+    parallel:
+        maximumNumberOfProcesses: 1
+
+    tmpDir: .phpstan.cache

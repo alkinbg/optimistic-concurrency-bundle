@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSER_NO_INTERACTION: '1'
+
+jobs:
+  code-style:
+    name: Code style
+    # Never execute untrusted fork code on the maintainer's self-hosted runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, alkin]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify PHP and Composer
+        run: |
+          php82 -v
+          php82 "$(command -v composer)" --version
+
+      - name: Validate Composer configuration
+        run: php82 "$(command -v composer)" validate --strict
+
+      - name: Install dependencies
+        run: php82 "$(command -v composer)" update --prefer-dist --no-progress
+
+      - name: Audit dependencies
+        run: php82 "$(command -v composer)" audit --locked
+
+      - name: Check code style
+        run: php82 vendor/bin/php-cs-fixer check --diff --config=.php-cs-fixer.dist.php
+
+  quality:
+    name: PHP ${{ matrix.php }} / ${{ matrix.dependencies }}
+    # Never execute untrusted fork code on the maintainer's self-hosted runner.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, alkin]
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.2'
+            php_binary: php82
+            dependencies: lowest
+            composer_options: '--prefer-lowest'
+            audit: false
+
+          - php: '8.2'
+            php_binary: php82
+            dependencies: latest
+            composer_options: ''
+            audit: true
+
+          - php: '8.3'
+            php_binary: php83
+            dependencies: latest
+            composer_options: ''
+            audit: true
+
+          - php: '8.4'
+            php_binary: php84
+            dependencies: latest
+            composer_options: ''
+            audit: true
+
+          - php: '8.5'
+            php_binary: php85
+            dependencies: latest
+            composer_options: ''
+            audit: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify PHP and Composer
+        run: |
+          ${{ matrix.php_binary }} -v
+          ${{ matrix.php_binary }} "$(command -v composer)" --version
+
+      - name: Validate Composer configuration
+        run: ${{ matrix.php_binary }} "$(command -v composer)" validate --strict
+
+      - name: Install dependencies
+        run: ${{ matrix.php_binary }} "$(command -v composer)" update --prefer-dist --no-progress ${{ matrix.composer_options }}
+
+      - name: Audit dependencies
+        if: matrix.audit
+        run: ${{ matrix.php_binary }} "$(command -v composer)" audit --locked
+
+      - name: Check platform requirements
+        run: ${{ matrix.php_binary }} "$(command -v composer)" check-platform-reqs
+
+      - name: Run tests
+        run: ${{ matrix.php_binary }} vendor/bin/phpunit
+
+      - name: Run static analysis
+        run: ${{ matrix.php_binary }} vendor/bin/phpstan analyse --memory-limit=512M
+
+  fork-pr:
+    name: Fork PR / PHP 8.4
+    # Untrusted contributions run only on an isolated GitHub-hosted runner.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: Run QA
+        run: composer qa
+
+  postgresql:
+    name: PostgreSQL / PHP 8.4
+    # Keep the private repository free of hosted-runner spend; this becomes a
+    # release portability gate automatically once the project is public.
+    if: github.event.repository.private == false && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: optimistic_concurrency
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d optimistic_concurrency"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: Run functional suite on PostgreSQL
+        env:
+          OPTIMISTIC_CONCURRENCY_DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/optimistic_concurrency?serverVersion=16'
+        run: vendor/bin/phpunit

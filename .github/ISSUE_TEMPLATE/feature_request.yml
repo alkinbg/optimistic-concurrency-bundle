@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a focused HTTP concurrency capability
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the concurrency or HTTP precondition problem, not only the desired API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include expected HTTP semantics and Doctrine interaction where relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: The proposal keeps application-specific conflict merge/retry policy outside the bundle.
+          required: true
+        - label: Any claimed persistence-level race guarantee is backed by an atomic database or Doctrine version precondition.
+          required: true
