@@ -26,11 +26,11 @@ final class EntityTagGeneratorTest extends FunctionalTestCase
         self::assertSame($this->generate($generator, $document), $this->generate($generator, $document));
     }
 
-	/**
-	 * @throws OptimisticLockException
-	 * @throws ORMException
-	 */
-	public function testTagIsStableAcrossManagedInstancesOfSameDatabaseState(): void
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     */
+    public function testTagIsStableAcrossManagedInstancesOfSameDatabaseState(): void
     {
         $document = $this->createDocument();
         $generator = $this->generator();

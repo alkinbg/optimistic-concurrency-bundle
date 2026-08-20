@@ -66,10 +66,10 @@ final class VersionedEntityGuardTest extends FunctionalTestCase
         $this->guard()->assertCanProtect($document);
     }
 
-	/**
-	 * @throws ORMException
-	 */
-	public function testLazyReferenceThroughEntityManagerDecoratorIsAccepted(): void
+    /**
+     * @throws ORMException
+     */
+    public function testLazyReferenceThroughEntityManagerDecoratorIsAccepted(): void
     {
         $document = $this->createDocument();
         $id = $document->id();
