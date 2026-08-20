@@ -154,7 +154,6 @@ final class PublicApiTest extends TestCase
         $legacyNeedles = [
             'Alkin\\OptimisticLockBundle',
             'Alkin\OptimisticConcurrencyBundle',
-            'Alkin\\OptimisticConcurrencyBundle',
             'OptimisticLockBundle',
             'Optimistic Lock Bundle',
             'optimistic-lock-bundle',
@@ -176,13 +175,24 @@ final class PublicApiTest extends TestCase
 
         foreach (['src', 'config', 'tests', '.github'] as $directory) {
             $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($projectRoot.'/'.$directory, \FilesystemIterator::SKIP_DOTS),
+                new \RecursiveDirectoryIterator(
+                    $projectRoot.'/'.$directory,
+                    \FilesystemIterator::SKIP_DOTS,
+                ),
             );
 
             foreach ($iterator as $file) {
-                if ($file instanceof \SplFileInfo && $file->isFile()) {
-                    $files[] = $file->getPathname();
+                if (!$file instanceof \SplFileInfo || !$file->isFile()) {
+                    continue;
                 }
+
+                $path = $file->getPathname();
+
+                if (__FILE__ === $path) {
+                    continue;
+                }
+
+                $files[] = $path;
             }
         }
 

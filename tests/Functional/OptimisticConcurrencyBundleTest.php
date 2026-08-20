@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace OptimisticConcurrency\Bundle\Tests\Functional;
 
+use Doctrine\DBAL\Exception;
 use OptimisticConcurrency\Bundle\Tests\Functional\Fixture\RecordingEntityTagProvider;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class OptimisticConcurrencyBundleTest extends FunctionalTestCase
 {
@@ -215,6 +217,14 @@ final class OptimisticConcurrencyBundleTest extends FunctionalTestCase
         $provider = $this->recordingProvider();
         $provider->reset();
 
+        $this->client->loginUser(
+            new InMemoryUser(
+                'regular-user',
+                'test-password',
+                ['ROLE_USER'],
+            ),
+        );
+
         $this->client->request(
             'PATCH',
             '/documents/'.$document->id().'/secured',
@@ -232,6 +242,9 @@ final class OptimisticConcurrencyBundleTest extends FunctionalTestCase
         self::assertSame(0, $provider->calls);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testDatabaseRaceBecomes412(): void
     {
         $document = $this->createDocument();
@@ -248,7 +261,14 @@ final class OptimisticConcurrencyBundleTest extends FunctionalTestCase
         self::assertSame(Response::HTTP_PRECONDITION_FAILED, $response->getStatusCode());
         self::assertNull($response->headers->get('ETag'));
         self::assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
-        self::assertFalse($this->entityManager->isOpen());
+        $currentTitle = $this->entityManager
+    ->getConnection()
+    ->fetchOne(
+        'SELECT title FROM documents WHERE id = ?',
+        [$document->id()],
+    );
+
+        self::assertSame('Concurrent writer', $currentTitle);
     }
 
     public function testDeleteIsRejectedBecauseDoctrineDeleteIsNotVersionGuarded(): void

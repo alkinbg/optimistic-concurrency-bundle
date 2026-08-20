@@ -55,6 +55,9 @@ final class EntityTagGeneratorTest extends FunctionalTestCase
 
         $this->entityManager->clear();
         $reference = $this->entityManager->getReference(Document::class, $id);
+        if (!$reference instanceof Document) {
+            throw new \LogicException('Expected Doctrine to return a Document lazy reference.');
+        }
 
         self::assertSame($before, $this->generate($generator, $reference));
     }

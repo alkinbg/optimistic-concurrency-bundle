@@ -61,7 +61,14 @@ final class TestKernel extends Kernel
         $container->extension('security', [
             'providers' => [
                 'users_in_memory' => [
-                    'memory' => null,
+                    'memory' => [
+                        'users' => [
+                            'regular-user' => [
+                                'password' => 'test-password',
+                                'roles' => ['ROLE_USER'],
+                            ],
+                        ],
+                    ],
                 ],
             ],
             'firewalls' => [
