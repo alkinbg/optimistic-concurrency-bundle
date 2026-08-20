@@ -6,6 +6,7 @@ namespace OptimisticConcurrency\Bundle\Tests\Functional;
 
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Doctrine\Persistence\ManagerRegistry;
 use OptimisticConcurrency\Bundle\Context\EntityTagContext;
 use OptimisticConcurrency\Bundle\ETag\EntityTagGenerator;
@@ -25,7 +26,11 @@ final class EntityTagGeneratorTest extends FunctionalTestCase
         self::assertSame($this->generate($generator, $document), $this->generate($generator, $document));
     }
 
-    public function testTagIsStableAcrossManagedInstancesOfSameDatabaseState(): void
+	/**
+	 * @throws OptimisticLockException
+	 * @throws ORMException
+	 */
+	public function testTagIsStableAcrossManagedInstancesOfSameDatabaseState(): void
     {
         $document = $this->createDocument();
         $generator = $this->generator();

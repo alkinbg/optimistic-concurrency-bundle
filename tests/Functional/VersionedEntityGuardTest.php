@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OptimisticConcurrency\Bundle\Tests\Functional;
 
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use OptimisticConcurrency\Bundle\Internal\VersionedEntityGuard;
 use OptimisticConcurrency\Bundle\Internal\VersionedEntityInspector;
@@ -65,7 +66,10 @@ final class VersionedEntityGuardTest extends FunctionalTestCase
         $this->guard()->assertCanProtect($document);
     }
 
-    public function testLazyReferenceThroughEntityManagerDecoratorIsAccepted(): void
+	/**
+	 * @throws ORMException
+	 */
+	public function testLazyReferenceThroughEntityManagerDecoratorIsAccepted(): void
     {
         $document = $this->createDocument();
         $id = $document->id();
