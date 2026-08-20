@@ -53,6 +53,9 @@ final class TestKernel extends Kernel
         $container->extension('framework', [
             'secret' => 'optimistic-concurrency-bundle-test',
             'test' => true,
+            'session' => [
+                'storage_factory_id' => 'session.storage.factory.mock_file',
+            ],
             'router' => [
                 'utf8' => true,
             ],
