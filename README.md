@@ -1,5 +1,13 @@
 # OptimisticConcurrencyBundle
 
+[![CI](https://github.com/alkinbg/optimistic-concurrency-bundle/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alkinbg/optimistic-concurrency-bundle/actions/workflows/ci.yml)
+![PHP](https://img.shields.io/badge/PHP-8.2%E2%80%938.5-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-7.4%20LTS%20%7C%208.1%2B-000000?logo=symfony&logoColor=white)
+![Doctrine ORM](https://img.shields.io/badge/Doctrine%20ORM-3.4.4%2B-FC6A31?logo=doctrine&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+[![Latest Stable Version](https://img.shields.io/packagist/v/alkinbg/optimistic-concurrency-bundle?logo=packagist)](https://packagist.org/packages/alkinbg/optimistic-concurrency-bundle)
+[![Total Downloads](https://img.shields.io/packagist/dt/alkinbg/optimistic-concurrency-bundle?logo=packagist)](https://packagist.org/packages/alkinbg/optimistic-concurrency-bundle)
+
 HTTP optimistic concurrency control for Symfony and Doctrine using strong ETags and `If-Match`.
 
 The bundle prevents **lost updates** when two clients edit the same Doctrine entity from an older representation. It connects HTTP conditional requests to Doctrine's versioned entities without adding another persistence layer.
