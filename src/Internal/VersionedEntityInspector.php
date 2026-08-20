@@ -38,6 +38,10 @@ final readonly class VersionedEntityInspector
             throw new \LogicException(sprintf('The entity "%s" is not managed by Doctrine. ETags can only be generated from the currently managed resource state.', $metadata->getName()));
         }
 
+        if ($manager->isUninitializedObject($entity)) {
+            $manager->initializeObject($entity);
+        }
+
         try {
             $version = $metadata->getFieldValue($entity, $versionField);
         } catch (\Error $exception) {
