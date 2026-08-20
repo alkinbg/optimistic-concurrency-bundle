@@ -6,14 +6,6 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
-### Added
-
-- MariaDB 11.8 portability CI running the functional concurrency suite through `pdo_mysql`.
-
-### Changed
-
-- Clarified that Symfony Flex registers the bundle automatically; manual `config/bundles.php` registration is only needed without Flex.
-
 ## [1.0.0] - 2026-08-20
 
 ### Added
@@ -42,6 +34,7 @@ The project follows Semantic Versioning.
 - CI coverage for PHP 8.2 through 8.5, including a lowest-dependency build.
 - Isolated GitHub-hosted CI for untrusted fork pull requests.
 - PostgreSQL portability CI for the public release line.
+- MariaDB 11.8 portability CI running the functional concurrency suite through `pdo_mysql`.
 - Dependabot maintenance for Composer and GitHub Actions dependencies.
 
 ### Changed
@@ -54,7 +47,8 @@ The project follows Semantic Versioning.
 - `EntityTagProviderInterface::generate()` receives `EntityTagContext`, finalizing the representation-aware public contract before the first stable release.
 - The default validator includes an explicit representation scope but deliberately ignores the HTTP method so a validator issued by a read endpoint can satisfy the subsequent write precondition for the same unchanged representation.
 - Functional database schema setup and teardown is symmetrical so external-database runs remain isolated after the intentional optimistic-lock race.
-- CI runs entirely on GitHub-hosted runners; trusted refs receive the full matrix and PostgreSQL gate while fork pull requests remain isolated.
+- CI runs entirely on GitHub-hosted runners; trusted refs receive the full PHP/dependency matrix plus PostgreSQL and MariaDB portability gates, while fork pull requests remain isolated.
+- Clarified that Symfony Flex registers the bundle automatically; manual `config/bundles.php` registration is only needed without Flex.
 
 ### Fixed
 
