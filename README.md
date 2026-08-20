@@ -188,7 +188,7 @@ The implementation follows HTTP strong-comparison semantics:
 - an explicitly present list containing no entity tags evaluates false and returns `412`;
 - malformed syntax is rejected instead of being guessed.
 
-`If-Match: *` is only an **existence precondition**. It does not prove that the client still holds the version it originally read, so it should not be used when the goal is lost-update prevention. The resolved entity is still required to be a managed, persisted, versioned Doctrine entity even for the wildcard form. The provider is also preflighted so an invalid custom validator fails before application mutation work starts.
+`If-Match: *` is only an **existence precondition**. It does not prove that the client still holds the version it originally read, so it should not be used when the goal is lost-update prevention. The resolved entity is still required to be a managed, persisted, versioned Doctrine entity even for the wildcard form. An entity that is only scheduled for insertion is not considered persisted, even when it already has an application-assigned identifier and initialized version value. The provider is also preflighted so an invalid custom validator fails before application mutation work starts.
 
 ## Representation scope
 
@@ -267,7 +267,7 @@ If your API needs a hard conditional delete, implement an application-specific d
 
 The precondition listener runs on `kernel.controller_arguments` at priority `-20000`.
 
-This is deliberately below Symfony's standard controller-attribute authorization processing on every supported framework line. The functional suite boots the real `SecurityBundle` and verifies that an anonymous request denied by `#[IsGranted]` returns `403` without disclosing an `ETag`, even when the request supplies a syntactically valid stale `If-Match` value.
+This is deliberately below Symfony's standard controller-attribute authorization processing on every supported framework line. The functional suite boots the real `SecurityBundle` and verifies that an authenticated user lacking the required role receives `403` before optimistic precondition processing, without invoking the ETag provider or disclosing an `ETag`, even when the request supplies a syntactically valid stale `If-Match` value. Anonymous requests may instead receive `401` according to the application's firewall; the required invariant is that authentication and authorization complete before validator derivation.
 
 Application-specific authorization listeners that protect the same controller must also complete before priority `-20000`. Do not place sensitive authorization exclusively inside the controller body: `#[RequireIfMatch]` necessarily evaluates its precondition before that body executes.
 
@@ -277,6 +277,7 @@ The bundle is deliberately small:
 
 - it protects one Doctrine ORM entity argument per controller method;
 - the entity must use `#[ORM\Version]` and be written through the ORM Unit of Work when relying on the bundle's Doctrine race guarantee;
+- the entity must already represent persisted database state; merely scheduling an entity for insertion is rejected even when an identifier and version value are already present;
 - a successful protected write must flush the intended versioned entity change before the response ETag is emitted; the bundle never flushes automatically;
 - the protected entity must remain managed by Doctrine while the bundle generates or validates its ETag, regardless of the configured provider;
 - direct DBAL/DQL bulk updates bypass Doctrine's per-entity version check and are outside the guarantee;
@@ -291,7 +292,7 @@ For a strong validator to be meaningful, the validator must change for every sta
 
 ## Backward-compatibility policy
 
-The 1.x line follows Semantic Versioning. The documented public classes and interface are covered by architecture tests that lock the provider signature, public constructor shapes and the public/internal boundary. Classes marked `@internal` are not part of the backward-compatibility promise.
+The 1.x line follows Semantic Versioning. The documented public classes and interface are covered by architecture tests that lock provider parameter names/types, public constructor shapes, readonly public properties and the public/internal boundary. Classes marked `@internal` are not part of the backward-compatibility promise.
 
 New optional constructor arguments or additive API may be introduced in minor releases. Removing or changing supported public signatures is reserved for a new major version.
 
@@ -309,7 +310,7 @@ OPTIMISTIC_CONCURRENCY_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:54
     vendor/bin/phpunit
 ```
 
-The test suite covers strong/weak validator behavior, malformed headers and no-store responses, parse-before-provider ordering, `428`, stale writes, updated ETags, wildcard matching and provider preflight, tolerant list parsing, provider output validation, provider-independent Doctrine version enforcement, the stable public API boundary, representation scopes, binary-safe string identifier normalization on the default SQLite fixture, Doctrine lazy references, real Symfony Security ordering, detached-entity rejection, hard-delete rejection and a real database race that Doctrine turns into an optimistic-lock conflict.
+The test suite covers strong/weak validator behavior, malformed headers and no-store responses, parse-before-provider ordering, `428`, stale writes, updated ETags, wildcard matching and provider preflight, tolerant list parsing, provider output validation, provider-independent Doctrine version enforcement, the stable public API boundary, representation scopes, binary-safe string identifier normalization on the default SQLite fixture, Doctrine lazy references and `EntityManagerDecorator` compatibility, real Symfony Security ordering, detached-entity and scheduled-insert rejection, hard-delete rejection and a real database race that Doctrine turns into an optimistic-lock conflict.
 
 ## License
 

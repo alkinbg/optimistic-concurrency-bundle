@@ -8,7 +8,9 @@ Starting with the first stable release, security fixes are applied to the latest
 
 OptimisticConcurrencyBundle is a concurrency-control layer, not an authorization layer.
 
-For endpoints protected with `#[EntityTag]` or `#[RequireIfMatch]`, resource authorization must complete before the bundle's `kernel.controller_arguments` listener runs at priority `-20000`. Symfony's standard `#[IsGranted]` processing satisfies that requirement on the supported framework versions. The functional test suite boots the real `SecurityBundle` and verifies that denied requests return `403` without invoking the optimistic precondition path or disclosing an `ETag`.
+For endpoints protected with `#[EntityTag]` or `#[RequireIfMatch]`, resource authorization must complete before the bundle's `kernel.controller_arguments` listener runs at priority `-20000`. Symfony's standard `#[IsGranted]` processing satisfies that requirement on the supported framework versions. The functional test suite boots the real `SecurityBundle` and verifies that an authenticated user lacking the required role receives `403` before optimistic precondition processing, without invoking the ETag provider or disclosing an `ETag`.
+
+Anonymous requests may correctly receive `401` depending on the application's firewall and authentication entry point. The security invariant enforced by the bundle is ordering: authentication and authorization must complete before validator derivation or precondition evaluation for protected resources.
 
 Do not rely only on authorization code inside the controller body for a protected endpoint when disclosing the existence or validator of the resource would be sensitive: the precondition check runs before the controller body. Move that authorization to Symfony security, `#[IsGranted]`, or another earlier listener.
 

@@ -2,9 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-The project follows Semantic Versioning. The next release is the first stable `1.0.0` release.
+The project follows Semantic Versioning.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-08-20
 
 ### Added
 
@@ -23,13 +25,14 @@ The project follows Semantic Versioning. The next release is the first stable `1
 - Independent Doctrine version/managed-state validation so a custom ETag provider cannot silently bypass the ORM optimistic-lock requirement.
 - Explicit rejection of detached protected entities and HTTP DELETE protection, with documented rejection of hard-delete flows under any verb.
 - Functional tests with a real SQLite-backed Doctrine entity and a real optimistic-lock race.
-- Functional Symfony Security coverage proving denied requests cannot disclose resource validators through the optimistic precondition path.
-- Doctrine lazy-reference validator stability coverage.
-- Public API architecture checks suitable for the 1.x backward-compatibility promise, including provider and constructor signatures.
+- Functional Symfony Security coverage proving authorization denial occurs before optimistic precondition processing and cannot disclose resource validators through that path.
+- Doctrine lazy-reference validator stability coverage, including an official `EntityManagerDecorator` compatibility regression test.
+- Explicit rejection coverage for entities scheduled for insertion even when application-assigned identifiers and initialized version fields already exist.
+- Public API architecture checks suitable for the 1.x backward-compatibility promise, including provider parameter names/types and public constructor signatures.
 - Optional DBAL URL support for running the portable functional suite against PostgreSQL or another supported database.
 - PHPStan level-max analysis and Symfony coding-style checks.
 - CI coverage for PHP 8.2 through 8.5, including a lowest-dependency build.
-- Isolated GitHub-hosted CI for untrusted fork pull requests once the repository is public.
+- Isolated GitHub-hosted CI for untrusted fork pull requests.
 - PostgreSQL portability CI for the public release line.
 - Dependabot maintenance for Composer and GitHub Actions dependencies.
 
@@ -42,7 +45,13 @@ The project follows Semantic Versioning. The next release is the first stable `1
 - Doctrine version/identifier/managed-state invariants now have one internal inspection implementation shared by the guard and default provider.
 - `EntityTagProviderInterface::generate()` receives `EntityTagContext`, finalizing the representation-aware public contract before the first stable release.
 - The default validator includes an explicit representation scope but deliberately ignores the HTTP method so a validator issued by a read endpoint can satisfy the subsequent write precondition for the same unchanged representation.
-- Functional database schema setup and teardown is symmetrical so external-database runs remain isolated even after the intentional optimistic-lock race closes the EntityManager.
+- Functional database schema setup and teardown is symmetrical so external-database runs remain isolated after the intentional optimistic-lock race.
+- CI runs entirely on GitHub-hosted runners; trusted refs receive the full matrix and PostgreSQL gate while fork pull requests remain isolated.
+
+### Fixed
+
+- Lazy Doctrine objects are initialized through the stable `ObjectManager::initializeObject()` contract without requiring `isUninitializedObject()`, preserving compatibility with official `EntityManagerDecorator` implementations across the supported Doctrine Persistence 3.x and 4.x range.
+- Entities that are only scheduled for insertion are rejected before validator generation, even if they already have an application-assigned identifier and initialized version value.
 
 ### Security
 

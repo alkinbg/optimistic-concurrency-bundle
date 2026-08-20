@@ -49,10 +49,10 @@ abstract class FunctionalTestCase extends TestCase
     {
         try {
             if (isset($this->entityManager)) {
-                // OptimisticLockException closes the EntityManager, but the
-                // underlying connection remains usable. Drop the schema first
-                // so external-database test runs stay isolated even after the
-                // intentional race test has closed the manager.
+                // The intentional optimistic-lock race may leave the EntityManager
+                // closed or unsuitable for further ORM work. Its metadata and DBAL
+                // connection remain available for schema cleanup on the supported
+                // Doctrine paths, so drop the schema before closing an open manager.
                 (new SchemaTool($this->entityManager))->dropSchema($this->metadata());
 
                 if ($this->entityManager->isOpen()) {

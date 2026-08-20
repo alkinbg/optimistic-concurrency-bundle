@@ -7,8 +7,10 @@ namespace OptimisticConcurrency\Bundle\Tests\Functional;
 use Doctrine\Persistence\ManagerRegistry;
 use OptimisticConcurrency\Bundle\Internal\VersionedEntityGuard;
 use OptimisticConcurrency\Bundle\Internal\VersionedEntityInspector;
+use OptimisticConcurrency\Bundle\Tests\Functional\Fixture\AssignedIdentifierDocument;
 use OptimisticConcurrency\Bundle\Tests\Functional\Fixture\Document;
 use OptimisticConcurrency\Bundle\Tests\Functional\Fixture\UnversionedDocument;
+use OptimisticConcurrency\Bundle\Tests\Functional\Support\EntityManagerDecoratorStub;
 
 final class VersionedEntityGuardTest extends FunctionalTestCase
 {
@@ -41,6 +43,17 @@ final class VersionedEntityGuardTest extends FunctionalTestCase
         $this->guard()->assertCanProtect($document);
     }
 
+    public function testScheduledInsertWithAssignedIdentifierIsRejected(): void
+    {
+        $document = new AssignedIdentifierDocument('pending-document');
+        $this->entityManager->persist($document);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('has not been persisted yet');
+
+        $this->guard()->assertCanProtect($document);
+    }
+
     public function testDetachedEntityIsRejected(): void
     {
         $document = $this->createDocument();
@@ -50,6 +63,32 @@ final class VersionedEntityGuardTest extends FunctionalTestCase
         $this->expectExceptionMessage('is not managed by Doctrine');
 
         $this->guard()->assertCanProtect($document);
+    }
+
+    public function testLazyReferenceThroughEntityManagerDecoratorIsAccepted(): void
+    {
+        $document = $this->createDocument();
+        $id = $document->id();
+
+        if (!is_int($id)) {
+            throw new \LogicException('Expected the persisted test document to have an integer identifier.');
+        }
+
+        $this->entityManager->clear();
+
+        $decoratedManager = new EntityManagerDecoratorStub($this->entityManager);
+        $reference = $decoratedManager->getReference(Document::class, $id);
+
+        if (!$reference instanceof Document) {
+            throw new \LogicException('Expected Doctrine to return a Document lazy reference.');
+        }
+
+        $registry = $this->createStub(ManagerRegistry::class);
+        $registry->method('getManagerForClass')->willReturn($decoratedManager);
+
+        (new VersionedEntityGuard(new VersionedEntityInspector($registry)))->assertCanProtect($reference);
+
+        $this->addToAssertionCount(1);
     }
 
     private function guard(): VersionedEntityGuard

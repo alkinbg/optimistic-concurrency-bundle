@@ -69,9 +69,11 @@ final class PublicApiTest extends TestCase
 
         self::assertSame('string', (string) $method->getReturnType());
         self::assertCount(2, $parameters);
+        self::assertSame('entity', $parameters[0]->getName());
         self::assertSame('object', (string) $parameters[0]->getType());
-        self::assertSame(EntityTagContext::class, (string) $parameters[1]->getType());
         self::assertFalse($parameters[0]->isOptional());
+        self::assertSame('context', $parameters[1]->getName());
+        self::assertSame(EntityTagContext::class, (string) $parameters[1]->getType());
         self::assertFalse($parameters[1]->isOptional());
     }
 

@@ -20,13 +20,13 @@ Before opening a pull request:
 3. keep the 1.x public API backward-compatible unless the change is intentionally reserved for the next major version;
 4. document HTTP-semantic or concurrency-guarantee changes in `README.md`, `SECURITY.md` when relevant, and `CHANGELOG.md`.
 
-The supported 1.x API consists of the bundle class, the two controller attributes, `EntityTagContext` and `EntityTagProviderInterface`. Types marked `@internal` are implementation details. The architecture suite deliberately enforces that boundary and locks the provider and public-constructor signatures.
+The supported 1.x API consists of the bundle class, the two controller attributes, `EntityTagContext` and `EntityTagProviderInterface`. Types marked `@internal` are implementation details. The architecture suite deliberately enforces that boundary and locks provider parameter names/types, public constructor signatures and readonly public properties.
 
 ## CI trust boundary
 
-The project uses a maintainer-operated self-hosted runner for trusted same-repository refs. Untrusted fork code is never executed on that machine.
+All CI runs on GitHub-hosted runners with repository contents limited to read access. Trusted same-repository refs run the full PHP 8.2 through 8.5 dependency matrix plus the PostgreSQL portability job.
 
-When the repository is public, fork pull requests use an isolated GitHub-hosted portability job instead. Maintainers should still review dependency or workflow changes carefully before reproducing them on trusted refs.
+Untrusted fork pull requests run only the isolated PHP 8.4 QA job. They do not receive repository secrets or write permissions, and the trusted matrix and service-backed PostgreSQL gate are skipped for those refs. Maintainers should still review dependency and workflow changes carefully before merging them into a trusted branch.
 
 ## Design principles
 

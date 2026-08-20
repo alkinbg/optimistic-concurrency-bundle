@@ -38,9 +38,15 @@ final readonly class VersionedEntityInspector
             throw new \LogicException(sprintf('The entity "%s" is not managed by Doctrine. ETags can only be generated from the currently managed resource state.', $metadata->getName()));
         }
 
-        if ($manager->isUninitializedObject($entity)) {
-            $manager->initializeObject($entity);
+        if ($manager->getUnitOfWork()->isScheduledForInsert($entity)) {
+            throw new \LogicException(sprintf('The entity "%s" has not been persisted yet. ETags can only be generated for persisted resources.', $metadata->getName()));
         }
+
+        // ObjectManager::initializeObject() is explicitly a no-op for ordinary
+        // objects and is part of Doctrine Persistence 3.x and 4.x. Calling it
+        // directly keeps lazy-reference support compatible with official
+        // EntityManagerDecorator implementations on the full supported range.
+        $manager->initializeObject($entity);
 
         try {
             $version = $metadata->getFieldValue($entity, $versionField);

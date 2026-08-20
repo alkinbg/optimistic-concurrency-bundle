@@ -51,7 +51,7 @@ final readonly class TestController
     #[RequireIfMatch('document', scope: 'document-detail')]
     public function securedUpdate(Document $document): Response
     {
-        $document->rename('This controller must not execute for anonymous users');
+        $document->rename('This controller must not execute for unauthorized users');
         $this->entityManager->flush();
 
         return new Response(null, Response::HTTP_NO_CONTENT);
