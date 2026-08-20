@@ -19,7 +19,7 @@ The 1.x public API is intentionally small: `OptimisticConcurrencyBundle`, `#[Ent
 composer require alkinbg/optimistic-concurrency-bundle
 ```
 
-Register the bundle:
+Symfony Flex registers the bundle automatically. If your application does not use Flex, register it manually:
 
 ```php
 // config/bundles.php
@@ -307,6 +307,13 @@ The default functional suite uses SQLite. To run the portable concurrency suite 
 
 ```bash
 OPTIMISTIC_CONCURRENCY_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/optimistic_concurrency?serverVersion=16' \
+    vendor/bin/phpunit
+```
+
+CI also runs the portable functional suite against MariaDB 11.8. To reproduce that gate locally:
+
+```bash
+OPTIMISTIC_CONCURRENCY_DATABASE_URL='mysql://optimistic_concurrency:optimistic_concurrency@127.0.0.1:3306/optimistic_concurrency?charset=utf8mb4' \
     vendor/bin/phpunit
 ```
 

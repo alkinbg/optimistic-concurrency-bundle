@@ -213,3 +213,54 @@ jobs:
         env:
           OPTIMISTIC_CONCURRENCY_DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/optimistic_concurrency?serverVersion=16'
         run: vendor/bin/phpunit
+
+  mariadb:
+    name: MariaDB 11.8 / PHP 8.4
+    # Run the database portability gate for pushes and trusted pull requests.
+    # Fork pull requests remain isolated from service-backed release checks.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: optimistic_concurrency
+          MARIADB_USER: optimistic_concurrency
+          MARIADB_PASSWORD: optimistic_concurrency
+          MARIADB_RANDOM_ROOT_PASSWORD: '1'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - name: Verify PHP and Composer
+        run: |
+          php -v
+          composer --version
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: Run functional suite on MariaDB
+        env:
+          OPTIMISTIC_CONCURRENCY_DATABASE_URL: 'mysql://optimistic_concurrency:optimistic_concurrency@127.0.0.1:3306/optimistic_concurrency?charset=utf8mb4'
+        run: vendor/bin/phpunit

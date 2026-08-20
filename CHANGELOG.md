@@ -6,6 +6,14 @@ The project follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- MariaDB 11.8 portability CI running the functional concurrency suite through `pdo_mysql`.
+
+### Changed
+
+- Clarified that Symfony Flex registers the bundle automatically; manual `config/bundles.php` registration is only needed without Flex.
+
 ## [1.0.0] - 2026-08-20
 
 ### Added
