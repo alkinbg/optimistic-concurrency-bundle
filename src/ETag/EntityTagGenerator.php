@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace OptimisticConcurrency\Bundle\ETag;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use OptimisticConcurrency\Bundle\Context\EntityTagContext;
 use OptimisticConcurrency\Bundle\Contract\EntityTagProviderInterface;
 use OptimisticConcurrency\Bundle\Internal\VersionedEntityInspector;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Default opaque validator derived from entity identity, version and scope.

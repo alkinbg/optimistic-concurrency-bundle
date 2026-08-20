@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 final readonly class VersionedEntityState
 {
     /**
-     * @param ClassMetadata<object>    $metadata
+     * @param ClassMetadata<object>   $metadata
      * @param array<array-key, mixed> $identifier
      */
     public function __construct(
