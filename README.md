@@ -7,6 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![Latest Stable Version](https://img.shields.io/packagist/v/alkinbg/optimistic-concurrency-bundle?logo=packagist)](https://packagist.org/packages/alkinbg/optimistic-concurrency-bundle)
 [![Total Downloads](https://img.shields.io/packagist/dt/alkinbg/optimistic-concurrency-bundle?logo=packagist)](https://packagist.org/packages/alkinbg/optimistic-concurrency-bundle)
+![REST API](https://img.shields.io/badge/REST-API-009688)
 
 HTTP optimistic concurrency control for Symfony and Doctrine using strong ETags and `If-Match`.
 
