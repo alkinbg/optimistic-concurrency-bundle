@@ -38,7 +38,7 @@
         "friendsofphp/php-cs-fixer": "^3.90",
         "phpstan/phpstan": "^2.2.2",
         "phpstan/phpstan-doctrine": "^2.0",
-        "phpunit/phpunit": "^11.5 || ^12.5",
+        "phpunit/phpunit": "^13.4.5",
         "psr/log": "^1.1 || ^2.0 || ^3.0",
         "symfony/browser-kit": "^7.4 || ^8.1",
         "symfony/framework-bundle": "^7.4 || ^8.1",
